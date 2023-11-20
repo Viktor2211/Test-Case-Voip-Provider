@@ -1,0 +1,34 @@
+version: '3.1'
+
+services:
+  db:
+    container_name: database
+    image: postgres:14.6-alpine
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
+    restart: always
+    ports:
+      - 5432:5432 # на сервере:внутри контейнера
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data # pgdata - на сервере, /var/lib/postgresql/data - внутри контейнера
+
+  backend:
+    container_name: backend
+    build:
+      context: .
+    command: sh -c "python backend/manage.py runserver 0.0.0.0:8000"
+    # gunicorn -b 0.0.0.0:8000 -w 4 django_integration.django_integration.wsgi --reload
+    ports:
+      - 8000:8000
+    restart: always
+    volumes:
+      - .:/src
+    env_file:
+      - .env
+    depends_on:
+      - db
